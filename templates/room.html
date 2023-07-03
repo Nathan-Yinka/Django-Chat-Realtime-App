@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body {
+  margin: 0 auto;
+  max-width: 800px;
+  padding: 0 20px;
+}
+
+.container {
+  border: 2px solid #dedede;
+  background-color: #f1f1f1;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+.darker {
+  border-color: #ccc;
+  background-color: #ddd;
+}
+
+.container::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
+.container img {
+  float: left;
+  max-width: 60px;
+  width: 100%;
+  margin-right: 20px;
+  border-radius: 50%;
+}
+
+.container img.right {
+  float: right;
+  margin-left: 20px;
+  margin-right:0;
+}
+
+.time-right {
+  float: right;
+  color: #aaa;
+}
+
+.time-left {
+  float: left;
+  color: #999;
+}
+</style>
+<script   src="https://code.jquery.com/jquery-3.1.1.min.js"   integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="   crossorigin="anonymous"></script>
+</head>
+<body>
+    <h2>{{room_detail.name}} - DjChat</h2>
+
+<div id="display">
+
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+  setInterval(async () => {
+    try {
+      const response = await fetch("/getMessages/{{room}}/", {
+        method: "GET",
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const display = document.querySelector("#display")
+        let temp2 = "";
+        const data = await response.json();
+        (data.messages).forEach((message)=>{
+            const temp = `
+            <div class = "container darker">
+                <b>
+                ${message.user}
+                </b>
+                    <p> 
+                        ${message.value}
+                    </p>
+                    <span class = "time-left">${message.date}</span>
+            </div>
+                `
+            temp2 += temp
+        })
+        display.innerHTML = temp2
+
+      } else {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  }, 1000);
+});
+</script>
+<div class="container">
+    <style>
+    input[type=text], select {
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    }
+
+    input[type=submit] {
+    width: 100%;
+    background-color: #4CAF50;
+    color: white;
+    padding: 14px 20px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    }
+
+    input[type=submit]:hover {
+    background-color: #45a049;
+    }
+
+    div {
+    border-radius: 5px;
+    background-color: #f2f2f2;
+    padding: 20px;
+    }
+    </style>
+
+    <form id="post-form">
+        {% csrf_token %}
+        <input type="hidden" name="username" id="username" value="{{username}}"/>
+        <input type="hidden" name="room_id" id="room_id" value="{{room_detail.id}}"/>
+        <input type="text" name="message" id="message" width="100px" />
+        <input type="submit" value="Send">
+    </form>
+</div>
+
+<script type="text/javascript">
+    // Using Ajax.
+//     $(document).ready(function() {
+//   $('#post-form').submit(function(event) {
+//     event.preventDefault();  // Prevent the form from submitting normally
+
+//     // Get the form data
+//     var formData = {
+//       username: $('#username').val(),
+//       room_id: $('#room_id').val(),
+//       message: $('#message').val(),
+//       csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+//       // Add other form fields as needed
+//     };
+
+//     // Send the AJAX request
+//     $.ajax({
+//       url: '/send',
+//       method: 'POST',
+//       data: formData,
+//       success: function(response) {
+//         // Handle the response from the server
+//         // ...
+//         alert(response)
+//       },
+//       error: function(xhr, status, error) {
+//         // Handle any error that occurred during the request
+//         console.log(error);
+//         console.log(status);
+//       }
+//     });
+//     document.getElementById("message").value = ""
+//   });
+// });
+
+
+// using fetch()
+document.addEventListener("DOMContentLoaded", () => {
+  const myForm = document.querySelector("#post-form");
+  myForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const formData = {
+      username: document.querySelector("#username").value,
+      room_id: document.querySelector("#room_id").value,
+      message: document.querySelector("#message").value,
+    };
+    try {
+      const response = await fetch("/send", {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(formData)
+      });
+      if (response.ok) {
+        // alert('Message sent successfully');
+        document.querySelector("#message").value =""
+      } else {
+        throw new Error('Network response was not ok');
+      }
+    } catch (err) {
+      console.log(`Error ${err}`);
+    }
+  });
+
+  function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      var cookies = document.cookie.split(';');
+      for (var i = 0; i < cookies.length; i++) {
+        var cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+});
+</script>
+</body>
+</html>
